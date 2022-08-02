@@ -1,11 +1,7 @@
 # include <stdio.h>
 # include "Storage/AllInOne.h"
-# define RAYGUI_IMPLEMENTATION 1
 # include <raylib.h>
 # include <ctype.h>
-// # include "raygui/src/raygui.h"
-
-// # include "GUI/day.h"
 
 enum {DAY=1, WEEK, MONTH, YEAR} CurrentState;
 
