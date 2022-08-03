@@ -45,7 +45,7 @@ int getStr(char string[], size_t max, FILE * fp) {
 char * composeString(struct element todo) {
     if(todo.name == NULL)
         return NULL;
-    char * str = (char *) malloc(sizeof(strlen(todo.name) + 100)), * w, i; // 100 is a maximum I guess
+    char * str = (char *) malloc(sizeof(todo.name)+100*sizeof(char)), * w, i; // 100 is a maximum I guess
     for(w = str; (*w = *todo.name) != '\0'; ++w, todo.name++)
         ;
     
@@ -61,7 +61,7 @@ char * composeString(struct element todo) {
     return str;
 }
 char * itoa(int c) {
-    char * f = (char *) malloc(log10(c)+30), * w = f; // 10 just in case
+    char * f = (char *) malloc(log10(c)*sizeof(char)+10), * w = f; // 10 just in case
     while(c != 0) {
         *w++ = c % 10 + '0';
         c /= 10;
@@ -82,7 +82,7 @@ struct element * decomposeString(char * s) {
     char * w;
     struct element * res = (struct element *) malloc(sizeof(*res));
     unsigned i;
-    for(w = s, i = 0, res->name = (char *) malloc(strlen(s)+1);*w != '/'; ++i, w++)
+    for(w = s, i = 0, res->name = (char *) malloc((strlen(s) + 1)*sizeof(char));*w != '/'; ++i, w++)
         res->name[i] = *w;
     res->name[i++] = '\0';
     res->priority = *++w;
