@@ -1,7 +1,11 @@
 # include <stdio.h>
 # include "Storage/AllInOne.h"
+# define RAYGUI_IMPLEMENTATION 1
 # include <raylib.h>
 # include <ctype.h>
+// # include "raygui/src/raygui.h"
+
+// # include "GUI/day.h"
 
 enum {DAY=1, WEEK, MONTH, YEAR} CurrentState;
 
@@ -12,15 +16,14 @@ enum {DEF = 1, CONFIRM, CREATE} currentState = DEF;
 enum {NAME = 4, PRIORITY} focus = NAME;
 
 int main(void) {
-    struct node_l * root,* todayR;
+    struct node_l * root,* root_F;
 
     SetTraceLogLevel(LOG_ERROR);
 
-    for(root = readData(), todayR = NULL; root != NULL; root = root->next)
+    for(root = readData(), root_F = NULL; root != NULL; root = root->next)
         if(root->pkg.time.tm_mday == getCurrentTime()->tm_mday)
-            todayR = appendElement(todayR, &root->pkg);
+            root_F = appendElement(root_F, &root->pkg);
     
-    root = readData();
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(WIDTH, HEIGHT, "Day List");
 
@@ -35,9 +38,8 @@ int main(void) {
         LoadFont("todo_Lib_fonts/Ubuntu-Regular.ttf"),
         
     };
+    free(root);
 
-
-    struct node_l * root_F = todayR;
     SetTargetFPS(30);
     char currentTime[100];
     char task_str[100];
@@ -67,6 +69,7 @@ int main(void) {
         task_name[f] = '\0';
 
 
+    static const int sizeOfChar =(int) pow(2, sizeof(char)*8-1);
     unsigned int frameCount = 0;
     size_t confirmed, hasChanged = 0;
     while(!WindowShouldClose()) {
@@ -80,7 +83,7 @@ int main(void) {
                     done++, --pending;
                     sprintf(task_str, "Tasks: %d/%d", done, pending+done);
                     hasChanged = 1;
-                    storeData(root);
+                    storeData(root_F);
                 }
                 confirmed = 0;
                 semp = NULL;
@@ -219,21 +222,22 @@ int main(void) {
             DrawRectangleLines(225, 200, 680, 70, focus == NAME ? WHITE : GRAY);
 
             
-            if(isalnum(c = GetCharPressed()) || isspace(c)) {
-                switch(focus) {
-                    case NAME:
+            if((c = GetCharPressed()) && c < sizeOfChar && focus == NAME) 
                         task_name[task_name_count++] = c;
-                        break;
-                    case PRIORITY :
-                        prio = c;
-                        break;
-                }
-            }
+
+            if(IsKeyPressed(KEY_RIGHT) && focus == PRIORITY && prio < 'F')
+                prio++;
+            if(IsKeyPressed(KEY_LEFT) && focus == PRIORITY && prio > 'A')
+                --prio;
+
+
+
             if(IsKeyPressed(KEY_LEFT_CONTROL))
                 focus = (focus == NAME) ? PRIORITY : NAME;
             if(IsKeyPressed(KEY_ENTER) && strlen(task_name) > 2 && prio) {
                 task_name[task_name_count] = '\0';
                 root_F = appendElement(root_F, createElement(task_name, prio, *getCurrentTime()));
+                storeData(root_F);
                 for(temp = root_F, pending = done = 0; temp != NULL; temp = temp->next) {
                     recs_tsks[done + pending] = (Rectangle) {10, 55 + (done + pending) * 45, WIDTH -20, 40};
                     if(temp->pkg.isDone)
@@ -247,7 +251,7 @@ int main(void) {
                 hasChanged = 1;
             }
 	    task_name[task_name_count] = '_';
-            if(IsKeyDown(KEY_BACKSPACE) && task_name_count > 0 && frameCount % 2 == 0)
+            if(IsKeyDown(KEY_BACKSPACE) && task_name_count > 0 && frameCount % 3 == 0)
                 task_name[task_name_count--] = '\0';
             task_name[task_name_count] = '_';
             DrawTextEx(fonts[7], task_name, (Vector2){250, 235 - 10}, 20.0f, 2.0f, WHITE);
@@ -263,11 +267,8 @@ int main(void) {
     if(frameCount >= 10000)
         frameCount = 0;
     }
-    // eraseData();
-    if(hasChanged)
-        storeData(root_F);
-    // I really want to close the window, but it causes an error, maybe later :()
-    return -1;
+    CloseWindow();
+    return 1;
 }
 
 
